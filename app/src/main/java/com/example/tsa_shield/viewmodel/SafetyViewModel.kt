@@ -13,7 +13,7 @@ import com.example.tsa_shield.data.UserProfile
 import com.example.tsa_shield.model.SafetyZone
 import com.example.tsa_shield.utils.BlockchainSim
 import com.example.tsa_shield.utils.RiskDetector
-import com.example.tsa_shield.utils.SafetyState
+import com.example.tsa_shield.utils.RiskLevel
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -22,7 +22,7 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     private val userDao = AppDatabase.getDatabase(application).userDao()
 
     var userLocation by mutableStateOf<LatLng?>(null)
-    var safetyStatus by mutableStateOf(SafetyState.SAFE)
+    var riskLevel by mutableStateOf(RiskLevel.LOW)
     var isEmergencyTriggered by mutableStateOf(false)
     var userProfile by mutableStateOf<UserProfile?>(null)
     var isDataTampered by mutableStateOf(false)
@@ -33,6 +33,10 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
     var isStayingTooLong by mutableStateOf(false)
     private var lastLocationTime: Long = 0
     private var lastSignificantLocation: LatLng? = null
+    
+    // SOS Cooldown to avoid repeated triggers (in milliseconds)
+    private var lastSOSAutoTriggerTime: Long = 0
+    private val SOS_COOLDOWN = 60000L // 1 minute cooldown
 
     private val dangerZones = listOf(
         SafetyZone("Danger Area Alpha", 28.6139, 77.2090, 500.0, false),
@@ -62,26 +66,58 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Updates user location and triggers risk re-evaluation.
+     */
     fun updateLocation(latLng: LatLng) {
         userLocation = latLng
         
+        // Track movement for inactivity detection
         if (lastSignificantLocation == null || getDistance(lastSignificantLocation!!, latLng) > 10.0) {
             lastSignificantLocation = latLng
             lastLocationTime = System.currentTimeMillis()
             isStayingTooLong = false
         }
 
+        evaluateRisk()
+    }
+
+    /**
+     * Re-evaluates risk based on current location and behavioral data.
+     */
+    private fun evaluateRisk() {
+        val latLng = userLocation ?: return
         val loc = Location("").apply {
             latitude = latLng.latitude
             longitude = latLng.longitude
         }
         
-        val newState = RiskDetector.checkSafetyStatus(loc, dangerZones)
-        if (!isStayingTooLong && newState != safetyStatus) {
-            if (newState == SafetyState.UNSAFE_ZONE) {
-                logAlert("Unsafe Zone Entry", "Entered restricted area at ${latLng.latitude}, ${latLng.longitude}")
-            }
-            safetyStatus = newState
+        // Task 1 & 2: Geo-fencing detection and risk connection
+        val zoneRisk = RiskDetector.detectZoneRisk(loc, dangerZones)
+        val combinedRisk = RiskDetector.calculateCombinedRisk(zoneRisk, isStayingTooLong)
+        
+        if (combinedRisk != riskLevel) {
+            riskLevel = combinedRisk
+            handleRiskLevelChange(riskLevel)
+        }
+    }
+
+    private fun handleRiskLevelChange(newRisk: RiskLevel) {
+        if (newRisk == RiskLevel.HIGH) {
+            logAlert("HIGH RISK DETECTED", "User entered an unsafe zone at ${userLocation?.latitude}, ${userLocation?.longitude}")
+            
+            // Task 3: Automatic SOS Trigger
+            autoTriggerSOS()
+        } else if (newRisk == RiskLevel.MEDIUM) {
+            logAlert("MEDIUM RISK DETECTED", "User has been stationary for too long.")
+        }
+    }
+
+    private fun autoTriggerSOS() {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastSOSAutoTriggerTime > SOS_COOLDOWN) {
+            lastSOSAutoTriggerTime = currentTime
+            triggerSOS(isAuto = true)
         }
     }
 
@@ -90,10 +126,10 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
             while (true) {
                 delay(10000)
                 val currentTime = System.currentTimeMillis()
+                // Inactivity threshold (e.g., 30s for demo)
                 if (lastLocationTime != 0L && (currentTime - lastLocationTime) > 30000 && !isStayingTooLong) {
                     isStayingTooLong = true
-                    safetyStatus = SafetyState.STATIONARY_TOO_LONG
-                    logAlert("Inactivity Detected", "User stationary for more than 30 seconds")
+                    evaluateRisk()
                 }
             }
         }
@@ -119,23 +155,22 @@ class SafetyViewModel(application: Application) : AndroidViewModel(application) 
         return results[0]
     }
 
-    fun triggerSOS() {
+    /**
+     * Triggers the SOS system.
+     */
+    fun triggerSOS(isAuto: Boolean = false) {
         isEmergencyTriggered = true
-        logAlert("SOS TRIGGERED", "Manual SOS button pressed")
+        val triggerType = if (isAuto) "AUTOMATIC SOS" else "MANUAL SOS"
+        logAlert(triggerType, "SOS system activated. Notifying emergency contacts.")
     }
 
+    /**
+     * Resets safety state if the user confirms they are safe.
+     */
     fun resetSafetyStatus() {
         isStayingTooLong = false
         lastLocationTime = System.currentTimeMillis()
-        userLocation?.let {
-            val loc = Location("").apply {
-                latitude = it.latitude
-                longitude = it.longitude
-            }
-            safetyStatus = RiskDetector.checkSafetyStatus(loc, dangerZones)
-        } ?: run {
-            safetyStatus = SafetyState.SAFE
-        }
+        evaluateRisk()
     }
 
     fun saveProfile(name: String, email: String, contact: String) {

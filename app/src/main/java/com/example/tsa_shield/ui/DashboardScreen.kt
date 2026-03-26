@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tsa_shield.R
-import com.example.tsa_shield.utils.SafetyState
+import com.example.tsa_shield.utils.RiskLevel
 import com.example.tsa_shield.viewmodel.SafetyViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -50,6 +50,7 @@ fun DashboardScreen(
                 )
             }
 
+            // Danger Zone Alpha
             Circle(
                 center = LatLng(28.6139, 77.2090),
                 radius = 500.0,
@@ -58,6 +59,7 @@ fun DashboardScreen(
                 strokeWidth = 2f
             )
 
+            // Safe Zone Beta
             Circle(
                 center = LatLng(28.6200, 77.2100),
                 radius = 300.0,
@@ -67,27 +69,27 @@ fun DashboardScreen(
             )
         }
 
-        // Top Status Indicator
+        // Task 4: Risk Indicator in UI
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(16.dp)
                 .fillMaxWidth(0.9f),
             colors = CardDefaults.cardColors(
-                containerColor = when (viewModel.safetyStatus) {
-                    SafetyState.SAFE -> Color(0xFF4CAF50)
-                    SafetyState.STATIONARY_TOO_LONG -> Color(0xFFFFA000)
-                    SafetyState.UNSAFE_ZONE -> Color(0xFFF44336)
+                containerColor = when (viewModel.riskLevel) {
+                    RiskLevel.LOW -> Color(0xFF4CAF50)    // Green
+                    RiskLevel.MEDIUM -> Color(0xFFFFA000) // Yellow/Amber
+                    RiskLevel.HIGH -> Color(0xFFF44336)   // Red
                 }
             ),
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = when (viewModel.safetyStatus) {
-                        SafetyState.SAFE -> stringResource(R.string.status_safe)
-                        SafetyState.STATIONARY_TOO_LONG -> stringResource(R.string.stationary_risk)
-                        SafetyState.UNSAFE_ZONE -> stringResource(R.string.status_risk)
+                    text = when (viewModel.riskLevel) {
+                        RiskLevel.LOW -> stringResource(R.string.status_safe)
+                        RiskLevel.MEDIUM -> stringResource(R.string.stationary_risk)
+                        RiskLevel.HIGH -> stringResource(R.string.status_risk)
                     },
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -95,10 +97,10 @@ fun DashboardScreen(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = when (viewModel.safetyStatus) {
-                        SafetyState.SAFE -> stringResource(R.string.safe_desc)
-                        SafetyState.STATIONARY_TOO_LONG -> stringResource(R.string.stationary_desc)
-                        SafetyState.UNSAFE_ZONE -> stringResource(R.string.risk_desc)
+                    text = when (viewModel.riskLevel) {
+                        RiskLevel.LOW -> stringResource(R.string.safe_desc)
+                        RiskLevel.MEDIUM -> stringResource(R.string.stationary_desc)
+                        RiskLevel.HIGH -> stringResource(R.string.risk_desc)
                     },
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 12.sp,
@@ -107,7 +109,7 @@ fun DashboardScreen(
             }
         }
 
-        // Action Buttons Column (on the right)
+        // Action Buttons Column
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
