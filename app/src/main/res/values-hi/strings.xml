@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">TSA SHIELD</string>
+    <string name="sos_button">आपातकालीन (SOS)</string>
+    <string name="status_safe">स्थिति: सुरक्षित</string>
+    <string name="status_risk">स्थिति: खतरा महसूस किया गया</string>
+    <string name="safe_desc">आप एक सुरक्षित क्षेत्र में हैं</string>
+    <string name="risk_desc">असुरक्षित क्षेत्र में प्रवेश कर रहे हैं!</string>
+    
+    <string name="settings">सेटिंग्स</string>
+    <string name="app_preferences">ऐप प्राथमिकताएं</string>
+    <string name="language">भाषा</string>
+    <string name="language_desc">अपनी पसंदीदा भाषा चुनें</string>
+    <string name="notifications">सुरक्षा सूचनाएं</string>
+    <string name="notifications_desc">खतरे वाले क्षेत्रों के लिए अलर्ट प्राप्त करें</string>
+    <string name="location_tracking">वास्तविक समय ट्रैकिंग</string>
+    <string name="location_tracking_desc">ऐप को आपकी लोकेशन मॉनिटर करने की अनुमति दें</string>
+    
+    <string name="register_title">TSA Shield के लिए पंजीकरण करें</string>
+    <string name="full_name">पूरा नाम</string>
+    <string name="email">ईमेल</string>
+    <string name="emergency_contact">आपातकालीन संपर्क नंबर</string>
+    <string name="register_btn">पंजीकरण करें और डिजिटल आईडी बनाएं</string>
+    
+    <string name="digital_id_title">ब्लॉकचेन डिजिटल आईडी</string>
+    <string name="personal_info">व्यक्तिगत जानकारी</string>
+    <string name="blockchain_verify">सिम्युलेटेड ब्लॉकचेन सत्यापन</string>
+    <string name="blockchain_desc">यह अद्वितीय आईडी हैश आपके प्रोफ़ाइल विवरण के आधार पर तैयार किया गया है। कोई भी अनधिकृत परिवर्तन हैश को अमान्य कर देगा।</string>
+    <string name="no_profile">कोई प्रोफ़ाइल डेटा नहीं मिला। कृपया पंजीकरण करें।</string>
+</resources>
