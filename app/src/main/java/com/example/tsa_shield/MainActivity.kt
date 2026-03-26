@@ -26,6 +26,7 @@ import com.example.tsa_shield.ui.AuthScreen
 import com.example.tsa_shield.ui.DashboardScreen
 import com.example.tsa_shield.ui.ProfileScreen
 import com.example.tsa_shield.ui.SettingsScreen
+import com.example.tsa_shield.ui.SplashScreen
 import com.example.tsa_shield.ui.theme.TSA_SHIELDTheme
 import com.example.tsa_shield.utils.LocationManager
 import com.example.tsa_shield.viewmodel.SafetyViewModel
@@ -96,9 +97,15 @@ private fun startTracking(context: android.content.Context, viewModel: SafetyVie
 fun AppNavigation(viewModel: SafetyViewModel) {
     val navController = rememberNavController()
 
-    val startDestination = if (viewModel.userProfile != null) "dashboard" else "auth"
-
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(onTimeout = {
+                val destination = if (viewModel.userProfile != null) "dashboard" else "auth"
+                navController.navigate(destination) {
+                    popUpTo("splash") { inclusive = true }
+                }
+            })
+        }
         composable("auth") {
             AuthScreen(viewModel, onAuthSuccess = {
                 navController.navigate("dashboard") {
@@ -120,22 +127,20 @@ fun AppNavigation(viewModel: SafetyViewModel) {
             })
         }
         composable("settings") {
-            SettingsScreen(onBack = {
-                navController.popBackStack()
-            })
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onResetProfile = {
+                    viewModel.resetProfileData()
+                    navController.navigate("auth") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
         composable("alerts") {
             AlertHistoryScreen(viewModel, onBack = {
                 navController.popBackStack()
             })
-        }
-    }
-    
-    LaunchedEffect(viewModel.userProfile) {
-        if (viewModel.userProfile != null && navController.currentDestination?.route == "auth") {
-             navController.navigate("dashboard") {
-                popUpTo("auth") { inclusive = true }
-            }
         }
     }
 }

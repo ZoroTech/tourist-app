@@ -37,4 +37,14 @@
     <string name="im_safe">I AM SAFE</string>
     <string name="safety_log">Safety Alert History</string>
     <string name="no_alerts">No safety alerts logged yet.</string>
+    
+    <string name="danger_zone_alpha">Danger Area Alpha</string>
+    <string name="safe_zone_beta">Safe Zone Beta</string>
+    
+    <string name="reset_data">Reset App Data</string>
+    <string name="reset_data_desc">Deletes your profile and all alert logs</string>
+    <string name="reset_confirm_title">Reset Everything?</string>
+    <string name="reset_confirm_msg">This will delete your Digital ID and all safety logs permanently.</string>
+    <string name="cancel">Cancel</string>
+    <string name="reset">Reset</string>
 </resources>
