@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tsa_shield.ui.AlertHistoryScreen
 import com.example.tsa_shield.ui.AuthScreen
 import com.example.tsa_shield.ui.DashboardScreen
+import com.example.tsa_shield.ui.IncidentHistoryScreen
 import com.example.tsa_shield.ui.ProfileScreen
 import com.example.tsa_shield.ui.SettingsScreen
 import com.example.tsa_shield.ui.SplashScreen
@@ -43,7 +44,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LocationPermissionWrapper {
+                    PermissionWrapper {
                         AppNavigation(viewModel)
                     }
                 }
@@ -53,32 +54,39 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LocationPermissionWrapper(content: @Composable () -> Unit) {
+fun PermissionWrapper(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val viewModel: SafetyViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+        val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val smsGranted = permissions[Manifest.permission.SEND_SMS] == true
+
+        if (locationGranted) {
             startTracking(context, viewModel)
-        } else {
-            Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show()
+        }
+        
+        if (!smsGranted) {
+            Toast.makeText(context, "SMS permission denied. SOS alerts won't be sent.", Toast.LENGTH_LONG).show()
         }
     }
 
     LaunchedEffect(Unit) {
-        val hasFineLocation = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+        val hasLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasSms = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
         
-        if (hasFineLocation) {
+        if (hasLocation) {
             startTracking(context, viewModel)
-        } else {
+        }
+        
+        if (!hasLocation || !hasSms) {
             launcher.launch(arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.SEND_SMS
             ))
         }
     }
@@ -118,7 +126,7 @@ fun AppNavigation(viewModel: SafetyViewModel) {
                 viewModel = viewModel,
                 onGoToProfile = { navController.navigate("profile") },
                 onGoToSettings = { navController.navigate("settings") },
-                onGoToAlerts = { navController.navigate("alerts") }
+                onGoToAlerts = { navController.navigate("incidents") }
             )
         }
         composable("profile") {
@@ -137,8 +145,8 @@ fun AppNavigation(viewModel: SafetyViewModel) {
                 }
             )
         }
-        composable("alerts") {
-            AlertHistoryScreen(viewModel, onBack = {
+        composable("incidents") {
+            IncidentHistoryScreen(viewModel, onBack = {
                 navController.popBackStack()
             })
         }

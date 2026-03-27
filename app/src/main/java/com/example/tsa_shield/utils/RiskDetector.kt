@@ -4,6 +4,15 @@ import android.location.Location
 import com.example.tsa_shield.model.SafetyZone
 
 /**
+ * Defines the user's overall safety state.
+ */
+enum class UserSafetyState {
+    SAFE,
+    AT_RISK,
+    EMERGENCY
+}
+
+/**
  * Defines the calculated risk levels for the tourist.
  */
 enum class RiskLevel {
@@ -21,8 +30,6 @@ object RiskDetector {
      * Determines the risk level based on the current location relative to safety zones.
      */
     fun detectZoneRisk(currentLocation: Location, zones: List<SafetyZone>): RiskLevel {
-        var risk = RiskLevel.LOW
-        
         for (zone in zones) {
             val results = FloatArray(1)
             Location.distanceBetween(
@@ -32,15 +39,10 @@ object RiskDetector {
             
             val distance = results[0]
             if (distance < zone.radiusInMeters) {
-                // If inside a zone, determine risk by its type
-                if (!zone.isSafe) {
-                    return RiskLevel.HIGH // Danger zone takes precedence
-                } else {
-                    risk = RiskLevel.LOW // Inside a safe zone
-                }
+                if (!zone.isSafe) return RiskLevel.HIGH
             }
         }
-        return risk
+        return RiskLevel.LOW
     }
 
     /**
@@ -51,6 +53,17 @@ object RiskDetector {
             zoneRisk == RiskLevel.HIGH -> RiskLevel.HIGH
             isStationaryTooLong -> RiskLevel.MEDIUM
             else -> zoneRisk
+        }
+    }
+
+    /**
+     * Maps RiskLevel to a UserSafetyState.
+     */
+    fun getSafetyState(risk: RiskLevel, isEmergencyTriggered: Boolean): UserSafetyState {
+        return when {
+            isEmergencyTriggered -> UserSafetyState.EMERGENCY
+            risk == RiskLevel.HIGH -> UserSafetyState.AT_RISK
+            else -> UserSafetyState.SAFE
         }
     }
 }
